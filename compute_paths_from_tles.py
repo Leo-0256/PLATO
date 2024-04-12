@@ -17,14 +17,18 @@ class TLEGraph:
         self.__num_satellites = 0
         self.__distance_matrix = []
         self.__parent_matrix = []
+        self.__neighbour_matrix = []
         self.__epoch = Time("2000-01-01 00:00:00", scale="tdb")
         self.__generate_distance_matrix_from_tle_filepath()
+
 
     def update_graph_by_new_tle_file(self, tle_filepath):
         self.__tle_filepath = tle_filepath
 
     def get_all_paths_by_floyd(self, time_str, out_filepath):
         self.__update_distance_matrix(time_str)
+        ## sort neighbour_matrix
+        # self.__neighbour_matrix = [sorted(neighbour) for neighbour in self.__neighbour_matrix]
         starttime = datetime.datetime.now()
         self.__floyd()
         endtime = datetime.datetime.now()
@@ -66,6 +70,8 @@ class TLEGraph:
             self.__parent_matrix = [
                 [i] * self.__num_satellites for i in range(self.__num_satellites)
             ]
+            self.__neighbour_matrix = [[] for i in range(self.__num_satellites)]
+
 
     def __update_distance_matrix(self, time_str):
         """
@@ -122,6 +128,11 @@ class TLEGraph:
                 ] = self.__distance_matrix[next_sat_in_adjacent_orbit_index][
                     cur_satellite_index
                 ] = distance_between_sat_in_adjacent_orbit
+                # print(cur_satellite_index)
+                self.__neighbour_matrix[cur_satellite_index].append(next_sat_in_same_orbit_index)
+                self.__neighbour_matrix[cur_satellite_index].append(next_sat_in_adjacent_orbit_index)
+                self.__neighbour_matrix[next_sat_in_same_orbit_index].append(cur_satellite_index)
+                self.__neighbour_matrix[next_sat_in_adjacent_orbit_index].append(cur_satellite_index)
 
     def __distance_m_between_satellites(self, sat1, sat2, epoch_str, date_str):
         """
@@ -169,12 +180,64 @@ class TLEGraph:
                         graph[i][j] = graph[i][k] + graph[k][j]
                         parents[i][j] = parents[k][j]
 
+
     def __print_path(self, i, j, e, outfile=sys.stdout):
         if i != j:
             self.__print_path(i, self.__parent_matrix[i][j], j, outfile)
         print(j, end="", file=outfile)
         if j != e:
             print("-->", end="", file=outfile)
+
+    def __update_neighbour(self):
+    ## For each point pairs i,j , Find from the neighbour of i and find the shortest path to j
+        n = self.__num_satellites
+        graph = self.__distance_matrix
+        parents = self.__parent_matrix
+        for i in range(n):
+            for j in range(n):
+                if (i != j) & (j not in self.__neighbour_matrix[i]):
+                    # print(i,j,self.__neighbour_matrix[i])
+                    min_cost = math.inf
+                    for neighbour in self.__neighbour_matrix[i]:
+                        if graph[i][neighbour] + graph[neighbour][j] < min_cost:
+                            min_cost = graph[i][neighbour] + graph[neighbour][j]
+                            # print(i,j,neighbour,parents[i][j], parents[neighbour][j])
+                            parents[i][j] = parents[neighbour][j]
+
+                            graph[i][j] = min_cost
+
+    def update_all_paths_by_floyd(self, time_str, out_filepath):
+        self.__neighbour_matrix =[[] for i in range(self.__num_satellites)]
+        self.__update_distance_matrix(time_str)
+        ## sort neighbour_matrix
+        # self.__neighbour_matrix = [sorted(neighbour) for neighbour in self.__neighbour_matrix]
+        starttime = datetime.datetime.now()
+        self.__update_neighbour()
+        endtime = datetime.datetime.now()
+        print(
+            self.__tle_filepath,
+            " Update Time: ",
+            (endtime - starttime).total_seconds() * 1e3,
+            "ms",
+        )
+        starttime = datetime.datetime.now()
+        f_out = open(out_filepath, "w+")
+        for i in range(self.__num_satellites):
+            for j in range(self.__num_satellites):
+                print("Path({}-->{}): ".format(i, j), end="", file=f_out)
+                self.__print_path(i, j, j, outfile=f_out)
+                print(
+                    " cost: {}".format(self.__distance_matrix[i][j]),
+                    file=f_out,
+                    flush=False,
+                )
+        endtime = datetime.datetime.now()
+        print(
+            self.__tle_filepath,
+            " Write Time: ",
+            (endtime - starttime).total_seconds() * 1e3,
+            "ms",
+        )
 
 
 def compute_path_by_networkx(tles_filepath, time_str, out_filepath):
@@ -341,16 +404,19 @@ if __name__ == "__main__":
     # ./TLE/demo_16x16_tle.txt  Write Time:  1032.144 ms
     # ./TLE/demo_25x25_tle.txt  Floyd Time:  29719.088 ms
     # ./TLE/demo_25x25_tle.txt  Write Time:  8590.823 ms
-    
-    # tles_filepath = "./TLE/starlink_tle.txt"
-    # starttime = datetime.datetime.now()
-    # tle_graph = TLEGraph(tles_filepath)
-    # endtime = datetime.datetime.now()
-    # print(
-    #     "Initialize starlink graph:", (endtime - starttime).total_seconds() * 1e3, "ms"
-    # )
-    # time_str = "2000-01-01 00:00:00"
-    # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/starlink_path.txt")
+
+    tles_filepath = "./TLE/starlink_tle.txt"
+    # tles_filepath = "./TLE/demo_10x10_tle.txt"
+    starttime = datetime.datetime.now()
+    tle_graph = TLEGraph(tles_filepath)
+    endtime = datetime.datetime.now()
+    print(
+        "Initialize starlink graph:", (endtime - starttime).total_seconds() * 1e3, "ms"
+    )
+    time_str = "2000-01-01 00:00:00"
+    tle_graph.get_all_paths_by_floyd(time_str, "./PATH/starlink_path_v2.txt")
+    time_str = "2000-01-01 00:01:00"
+    tle_graph.update_all_paths_by_floyd(time_str, "./PATH/starlink_path_v2_next.txt")
 
     # Initialize starlink graph: 198.882 ms
     # ./TLE/starlink_tle.txt  Floyd Time:  461389.703 ms
