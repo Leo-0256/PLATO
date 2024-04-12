@@ -25,7 +25,16 @@ class TLEGraph:
 
     def get_all_paths_by_floyd(self, time_str, out_filepath):
         self.__update_distance_matrix(time_str)
+        starttime = datetime.datetime.now()
         self.__floyd()
+        endtime = datetime.datetime.now()
+        print(
+            self.__tle_filepath,
+            " Floyd Time: ",
+            (endtime - starttime).total_seconds() * 1e3,
+            "ms",
+        )
+        starttime = datetime.datetime.now()
         f_out = open(out_filepath, "w+")
         for i in range(self.__num_satellites):
             for j in range(self.__num_satellites):
@@ -34,8 +43,15 @@ class TLEGraph:
                 print(
                     " cost: {}".format(self.__distance_matrix[i][j]),
                     file=f_out,
-                    flush=True,
+                    flush=False,
                 )
+        endtime = datetime.datetime.now()
+        print(
+            self.__tle_filepath,
+            " Write Time: ",
+            (endtime - starttime).total_seconds() * 1e3,
+            "ms",
+        )
 
     def __generate_distance_matrix_from_tle_filepath(self):
         with open(self.__tle_filepath, "r") as f_tle:
@@ -228,7 +244,7 @@ def compute_path_by_networkx(tles_filepath, time_str, out_filepath):
             print(
                 " cost: {}".format(length),
                 file=f_out,
-                flush=True,
+                flush=False,
             )
 
 
@@ -270,108 +286,100 @@ def distance_m_between_satellites(sat1, sat2, epoch_str, date_str):
 
 if __name__ == "__main__":
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_2x2_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_2x2_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms") # 1.43 ms
     # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_2x2_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_3x3_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_3x3_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms") # 2.175 ms
     # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_3x3_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_4x4_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_4x4_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds /1000 , "ms") # 5.102 ms
     # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_4x4_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_5x5_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_5x5_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds /1000 , "ms") # 10.54 ms
-    # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_5x5_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_10x10_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_10x10_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms") # 319.09 ms
     # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_10x10_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_16x16_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_16x16_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms") # 991.197 ms
     # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_16x16_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_25x25_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_25x25_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms")
-    # # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_25x25_nx_path.txt")
+    # compute_path_by_networkx(tles_filepath, time_str, "./PATH/demo_25x25_nx_path.txt")
 
-    # starttime = datetime.datetime.now()
+    # ./TLE/demo_2x2_tle.txt  Floyd Time:  0.02 ms
+    # ./TLE/demo_2x2_tle.txt  Write Time:  0.34 ms
+    # ./TLE/demo_3x3_tle.txt  Floyd Time:  0.111 ms
+    # ./TLE/demo_3x3_tle.txt  Write Time:  0.507 ms
+    # ./TLE/demo_4x4_tle.txt  Floyd Time:  0.746 ms
+    # ./TLE/demo_4x4_tle.txt  Write Time:  2.214 ms
+    # ./TLE/demo_5x5_tle.txt  Floyd Time:  1.974 ms
+    # ./TLE/demo_5x5_tle.txt  Write Time:  3.758 ms
+    # ./TLE/demo_10x10_tle.txt  Floyd Time:  110.169 ms
+    # ./TLE/demo_10x10_tle.txt  Write Time:  97.166 ms
+    # ./TLE/demo_16x16_tle.txt  Floyd Time:  1854.9370000000001 ms
+    # ./TLE/demo_16x16_tle.txt  Write Time:  1032.144 ms
+    # ./TLE/demo_25x25_tle.txt  Floyd Time:  29719.088 ms
+    # ./TLE/demo_25x25_tle.txt  Write Time:  8590.823 ms
+    
     # tles_filepath = "./TLE/starlink_tle.txt"
-    # tle_graph = TLEGraph(tles_filepath)
-    # endtime = datetime.datetime.now() # 205.545 ms
-    # print((endtime - starttime).microseconds / 1000, "ms")
     # starttime = datetime.datetime.now()
+    # tle_graph = TLEGraph(tles_filepath)
+    # endtime = datetime.datetime.now()
+    # print(
+    #     "Initialize starlink graph:", (endtime - starttime).total_seconds() * 1e3, "ms"
+    # )
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/starlink_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms")
 
-    # starttime = datetime.datetime.now()
+    # Initialize starlink graph: 198.882 ms
+    # ./TLE/starlink_tle.txt  Floyd Time:  461389.703 ms
+    # ./TLE/starlink_tle.txt  Write Time:  91489.615 ms
+
     # tles_filepath = "./TLE/kuiper_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms") # 635.933 ms
-    # starttime = datetime.datetime.now()
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/kuiper_path.txt")
-    # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms")
+    # ./TLE/kuiper_tle.txt  Floyd Time:  172274.229 ms
+    # ./TLE/kuiper_tle.txt  Write Time:  38114.752 ms
 
-    # starttime = datetime.datetime.now()
+
     # tles_filepath = "./TLE/demo_50x50_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_50x50_path.txt")
     # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms")
+    # print((endtime - starttime).total_seconds() * 1e3, "ms")
 
     # starttime = datetime.datetime.now()
     # tles_filepath = "./TLE/demo_100x100_tle.txt"
     # tle_graph = TLEGraph(tles_filepath)
     # endtime = datetime.datetime.now() # 369.105 ms
-    # print((endtime - starttime).microseconds / 1000, "ms")
+    # print((endtime - starttime).total_seconds() * 1e3, "ms")
     # starttime = datetime.datetime.now()
     # time_str = "2000-01-01 00:00:00"
     # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/demo_100x100_path.txt")
     # endtime = datetime.datetime.now()
-    # print((endtime - starttime).microseconds / 1000, "ms")
+    # print((endtime - starttime).total_seconds() * 1e3, "ms")
 
     pass
