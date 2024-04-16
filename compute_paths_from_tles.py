@@ -247,7 +247,7 @@ def compute_path_by_networkx(tles_filepath, time_str, out_filepath):
     num_sat_per_orbit = 0
     num_satellites = 0
     satellite_list = []
-
+    neighbour_matrix =[]
     with open(tles_filepath, "r") as f_tle:
         firstline = f_tle.readline().strip().split()
         num_orbits, num_sat_per_orbit = int(firstline[0]), int(firstline[1])
@@ -259,7 +259,7 @@ def compute_path_by_networkx(tles_filepath, time_str, out_filepath):
             cur_satellite = ephem.readtle(row, line1, line2)
             satellite_list.append(cur_satellite)
     graph.add_nodes_from([i for i in range(num_satellites)])
-
+    neighbour_matrix = [[] for i in range(num_satellites)]
     for i in range(num_orbits):
         for j in range(num_sat_per_orbit):
             cur_satellite_index = i * num_sat_per_orbit + j
@@ -293,23 +293,98 @@ def compute_path_by_networkx(tles_filepath, time_str, out_filepath):
                 next_sat_in_adjacent_orbit_index,
                 distance=distance_between_sat_in_adjacent_orbit,
             )
+            neighbour_matrix[cur_satellite_index].append(next_sat_in_same_orbit_index)
+            neighbour_matrix[cur_satellite_index].append(next_sat_in_adjacent_orbit_index)
+            neighbour_matrix[next_sat_in_same_orbit_index].append(cur_satellite_index)
+            neighbour_matrix[next_sat_in_adjacent_orbit_index].append(cur_satellite_index)
 
     f_out = open(out_filepath, "w")
+    starttime = datetime.datetime.now()
+
+    distance = nx.floyd_warshall_numpy(graph,weight="distance")
+    flag = 0
+    predecessor = [[-1 for i in range(num_satellites)] for j in range(num_satellites)]
     for i in range(num_satellites):
         for j in range(num_satellites):
-            path = nx.shortest_path(graph, i, j, weight="distance")
-            length = nx.shortest_path_length(graph, i, j, weight="distance")
-            print("Path({}-->{}): ".format(i, j), end="", file=f_out)
-            for k in range(len(path)):
-                print(path[k], end="", file=f_out)
-                if k != len(path) - 1:
-                    print("-->", end="", file=f_out)
+            flag = 0
+            if (i != j): # & (j not in neighbour_matrix[i]):
+                # print(i,j,self.__neighbour_matrix[i])
+                for neighbour in neighbour_matrix[i]:
+                    if distance[i][neighbour] + distance[neighbour][j] == distance[i][j]:
+                        # min_cost = graph[i][neighbour] + graph[neighbour][j]
+                        # print(i,j,neighbour,parents[i][j], parents[neighbour][j])
+                        predecessor[i][j] = neighbour
+                        # flag = 1
+                        break
+                # if flag!=1 :
+                #     print("error",i,j,distance[i][neighbour],distance[neighbour][j],distance[i][j])
+
+    endtime = datetime.datetime.now()
+    print(
+        " Update Time: ",
+        (endtime - starttime).total_seconds() * 1e3,
+        "ms",
+    )
+
+    starttime = datetime.datetime.now()
+    f_out = open(out_filepath, "w+")
+    print( num_satellites)
+    for i in range(num_satellites):
+        for j in range(num_satellites):
+            if i==j:
+                break
+            print("Path({}-->{}): ".format(i, j), end="", file=f_out, flush=False)
+            now = i
+            print("{} -->".format(now), end="", file=f_out, flush=False)
+            while True:
+                now = predecessor[now][j]
+                if now == j:
+                    print(j,end ="",file=f_out,flush=False)
+                    break
+                else:
+                    print("{} -->".format(now),end ="",file=f_out,flush=False)
+
+            # print_path(i, j, j, outfile=f_out)
             print(
-                " cost: {}".format(length),
+                " cost: {}".format(distance[i][j]),
                 file=f_out,
                 flush=False,
             )
+    endtime = datetime.datetime.now()
+    print(
+        out_filepath,
+        " Write Time: ",
+        (endtime - starttime).total_seconds() * 1e3,
+        "ms",
+    )
+    # starttime = datetime.datetime.now()
+    #
+    # predecessor, distance = nx.floyd_warshall_predecessor_and_distance(graph,weight="distance")
+    # # print(distance)
+    # # print(predecessor)
+    # endtime = datetime.datetime.now()
+    # print(
+    #     " Update Time: ",
+    #     (endtime - starttime).total_seconds() * 1e3,
+    #     "ms",
+    # )
 
+
+    # for i in range(num_satellites):
+    #     for j in range(num_satellites):
+    #         path = nx.shortest_path(graph, i, j, weight="distance")
+    #         length = nx.shortest_path_length(graph, i, j, weight="distance")
+    #         print("Path({}-->{}): ".format(i, j), end="", file=f_out)
+    #         for k in range(len(path)):
+    #             print(path[k], end="", file=f_out)
+    #             if k != len(path) - 1:
+    #                 print("-->", end="", file=f_out)
+    #         print(
+    #             " cost: {}".format(length),
+    #             file=f_out,
+    #             flush=False,
+    #         )
+    #
 
 def distance_m_between_satellites(sat1, sat2, epoch_str, date_str):
     """
@@ -414,9 +489,11 @@ if __name__ == "__main__":
         "Initialize starlink graph:", (endtime - starttime).total_seconds() * 1e3, "ms"
     )
     time_str = "2000-01-01 00:00:00"
-    tle_graph.get_all_paths_by_floyd(time_str, "./PATH/starlink_path_v2.txt")
-    time_str = "2000-01-01 00:01:00"
-    tle_graph.update_all_paths_by_floyd(time_str, "./PATH/starlink_path_v2_next.txt")
+    # tle_graph.get_all_paths_by_floyd(time_str, "./PATH/starlink_path_v2.txt")
+
+    compute_path_by_networkx(tles_filepath, time_str, "./PATH/starlink_tle.txt")
+    # time_str = "2000-01-01 00:01:00"
+    # tle_graph.update_all_paths_by_floyd(time_str, "./PATH/starlink_path_v2_next.txt")
 
     # Initialize starlink graph: 198.882 ms
     # ./TLE/starlink_tle.txt  Floyd Time:  461389.703 ms
