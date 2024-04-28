@@ -35,6 +35,11 @@ def compute_paths_from_tles(tles_filepath, time_str, out_filepath):
     graph.add_nodes_from([i for i in range(num_satellites)])
     neighbour_matrix = [[] for i in range(num_satellites)]
 
+    distance = [
+        [math.inf if i != j else 0 for j in range(num_satellites)]
+        for i in range(num_satellites)
+    ]
+
     for i in range(num_orbits):
         for j in range(num_sat_per_orbit):
             cur_satellite_index = i * num_sat_per_orbit + j
@@ -85,13 +90,21 @@ def compute_paths_from_tles(tles_filepath, time_str, out_filepath):
 
     # Calculate all sat-pair distance
     starttime = datetime.datetime.now()
+
     distance = nx.floyd_warshall_numpy(graph, weight="distance")
+
     endtime = datetime.datetime.now()
     print(
         "Floyd Calculation Distance Matrix Time: ",
         (endtime - starttime).total_seconds(),
         "s",
     )
+
+    # with open("./a.txt", "w") as fff:
+    #     for i in range(num_satellites):
+    #         for j in range(num_satellites):
+    #             print(distance[i][j], end=" ", file=fff)
+    #         print(file=fff)
 
     # Calculate Paths by distance matrix
     starttime = datetime.datetime.now()
@@ -123,39 +136,39 @@ def compute_paths_from_tles(tles_filepath, time_str, out_filepath):
     )
 
     # Write paths to file
-    starttime = datetime.datetime.now()
-    f_out = open(out_filepath, "w+")
-    # print(num_satellites)
-    for i in range(num_satellites):
-        for j in range(num_satellites):
-            if i == j:
-                break
-            print("Path({}-->{}): ".format(i, j), end="", file=f_out, flush=False)
-            now = i
-            print("{} -->".format(now), end="", file=f_out, flush=False)
-            while True:
-                now = predecessor[now][j]
-                if now == j:
-                    print(j, end="", file=f_out, flush=False)
-                    break
-                else:
-                    print("{} -->".format(now), end="", file=f_out, flush=False)
-
-            # print_path(i, j, j, outfile=f_out)
-            print(
-                " cost: {}".format(distance[i][j]),
-                file=f_out,
-                flush=False,
-            )
-    endtime = datetime.datetime.now()
-    print(
-        out_filepath,
-        "File Write Time: ",
-        (endtime - starttime).total_seconds(),
-        "s",
-    )
     # starttime = datetime.datetime.now()
-    #
+    # f_out = open(out_filepath, "w+")
+    # print(num_satellites)
+    # for i in range(num_satellites):
+    #     for j in range(num_satellites):
+    #         if i == j:
+    #             break
+    #         print("Path({}-->{}): ".format(i, j), end="", file=f_out, flush=False)
+    #         now = i
+    #         print("{} -->".format(now), end="", file=f_out, flush=False)
+    #         while True:
+    #             now = predecessor[now][j]
+    #             if now == j:
+    #                 print(j, end="", file=f_out, flush=False)
+    #                 break
+    #             else:
+    #                 print("{} -->".format(now), end="", file=f_out, flush=False)
+
+    #         # print_path(i, j, j, outfile=f_out)
+    #         print(
+    #             " cost: {}".format(distance[i][j]),
+    #             file=f_out,
+    #             flush=False,
+    #         )
+    # endtime = datetime.datetime.now()
+    # print(
+    #     out_filepath,
+    #     "File Write Time: ",
+    #     (endtime - starttime).total_seconds(),
+    #     "s",
+    # )
+    # starttime = datetime.datetime.now()
+
     # predecessor, distance = nx.floyd_warshall_predecessor_and_distance(graph,weight="distance")
     # # print(distance)
     # # print(predecessor)
@@ -221,27 +234,13 @@ def distance_m_between_satellites(sat1, sat2, epoch_str, date_str):
 
 if __name__ == "__main__":
 
-    # tles_filepath = "./TLE/demo_10x10_tle.txt"
+    # tles_filepath = "./TLE/demo_16x16_tle.txt"
     # time_str = "2000-01-01 00:01:00"
-    # compute_paths_from_tles(tles_filepath, time_str, "PATH/demo_10x10_path.txt")
-    # Initialize Topology Time:  0.016648 s
-    # Floyd Calculation Distance Matrix Time:  0.003247 s
-    # Predecessor Matrix Update Time:  0.019957 s
-    # PATH/demo_10x10_path.txt File Write Time:  0.041841 s
-
-
-    # tles_filepath = "./TLE/demo_25x25_tle.txt"
-    # time_str = "2000-01-01 00:01:00"
-    # compute_paths_from_tles(tles_filepath, time_str, "./PATH/demo_25x25_path.txt")
-    # Initialize Topology Time:  0.038404 s
-    # Floyd Calculation Distance Matrix Time:  0.643962 s
-    # Predecessor Matrix Update Time:  0.78035 s
-    # ./PATH/demo_25x25_path.txt File Write Time:  3.615534 s
+    # compute_paths_from_tles(tles_filepath, time_str, "PATH/demo_16x16_tle.txt")
 
     tles_filepath = "./TLE/starlink_tle.txt"
     time_str = "2000-01-01 00:01:00"
     compute_paths_from_tles(tles_filepath, time_str, "PATH/starlink_tle.txt")
-    # Initialize Topology Time:  0.115956 s
-    # Floyd Calculation Distance Matrix Time:  12.506848 s
-    # Predecessor Matrix Update Time:  5.505555 s
-    # PATH/starlink_tle.txt File Write Time:  48.109487 s
+    # Initialize Topology Time:  0.162044 s
+    # Floyd Calculation Distance Matrix Time:  7.929644 s
+    # Predecessor Matrix Update Time:  2.986702 s
